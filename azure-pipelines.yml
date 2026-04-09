@@ -1,0 +1,37 @@
+# -------------------------
+# APPLY
+# -------------------------
+- stage: Terraform_Apply
+  displayName: "Terraform Apply"
+  dependsOn: Terraform_Plan
+  condition: succeeded()
+  jobs:
+  - job: Apply
+    steps:
+
+    - download: current
+      artifact: tfplan
+
+    - task: TerraformInstaller@1
+      displayName: "Install Terraform"
+      inputs:
+        terraformVersion: $(terraformVersion)
+
+    - task: TerraformTaskV4@4
+      displayName: "Terraform Init"
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'azure-conn'
+        backendAzureRmResourceGroupName: 'rg-tfstate'
+        backendAzureRmStorageAccountName: 'mystatefilegkinfra'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'terraform.tfstate'
+
+    - task: TerraformTaskV4@4
+      displayName: "Terraform Apply"
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        environmentServiceNameAzureRM: 'azure-conn'
+        commandOptions: 'tfplan'
